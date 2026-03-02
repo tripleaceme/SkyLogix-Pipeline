@@ -5,10 +5,10 @@ Real-time weather data pipeline for **SkyLogix Transportation**, a logistics com
 ## Architecture
 
 ```
-OpenWeather API  →  MongoDB (Staging)  →  Airbyte (Full Refresh)  →  DuckDB (Warehouse)  →  Dashboard
+OpenWeather API  →  MongoDB (Staging)  →  Airbyte (Incremental | Append)  →  DuckDB (Warehouse)  →  Dashboard
       |                   |                        |                          |                    |
- fetch_weather.py    mongo_loader.py         Full Refresh |             transform.py         dashboard.py
- (API → JSON)        (JSON → MongoDB)          Overwrite               (raw → star schema)   (Streamlit)
+ fetch_weather.py    mongo_loader.py         Incremental |             transform.py         dashboard.py
+ (API → JSON)        (JSON → MongoDB)          Append                (raw → star schema)   (Streamlit)
 ```
 
 ## Tech Stack
