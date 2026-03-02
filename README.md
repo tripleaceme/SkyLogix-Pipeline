@@ -127,41 +127,16 @@ The following technical constraints were encountered during implementation that 
 
 **Workaround:** Migrated staging database to **MongoDB Atlas** (M0 free tier), which provides TLS out of the box. A dedicated read-only `airbyte_reader` user was created in Atlas for the Airbyte source connection.
 
-### 3. Airbyte 0.50.35 NullPointerException Bug (MongoDB CDC)
 
-**Planned:** Use Change Data Capture (CDC) for incremental MongoDB syncs.
-
-**Actual:** Airbyte v0.50.35 has a known bug where MongoDB CDC global state causes a `NullPointerException` on `getGlobal()`, making incremental CDC syncs fail on every run.
-
-**Workaround:** Abandoned CDC; using `Full Refresh | Overwrite` mode as described in limitation #1.
-
-### 4. MongoDB Staging Uses Upsert (Current State Only)
+### 3. MongoDB Staging Uses Upsert (Current State Only)
 
 **Planned:** MongoDB as an append-style staging store accumulating time-series records.
 
 **Actual:** `mongo_loader.py` performs an `update_one(..., upsert=True)` keyed on `city_id`. This means MongoDB always holds exactly **3 documents** (one per city) reflecting the latest reading.
 
-**Impact:** Historical accumulation happens exclusively in the DuckDB warehouse. Each `mongo_loader.py` run updates `updatedAt`, Airbyte replaces the raw DuckDB table on sync, and `transform.py` appends any new `(city_id, updated_at)` combinations to the fact table — so time-series data is preserved at the warehouse layer.
+**Impact:** Historical accumulation happens exclusively in the DuckDB warehouse. Each `mongo_loader.py` run updates `updatedAt`, Airbyte replaces the raw DuckDB table on sync, and `transform.py` appends any new `(city_id, updated_at)` combinations to the fact table, so time-series data is preserved at the warehouse layer.
 
-### 5. Airbyte Raw Table Structure Wraps Data in JSON String
-
-**Planned:** Airbyte would write clean, normalized columns to DuckDB directly.
-
-**Actual:** The Airbyte DuckDB destination writes a table named `_airbyte_raw_weather_raw` with a single `_airbyte_data` column containing the entire MongoDB document as a **JSON string**. All field extraction in `transform.py` requires `json_extract_string(_airbyte_data, '$.field')` calls.
-
-### 6. PostgreSQL Audit Logging Removed
-
-**Planned:** Original code included a `insert_history` audit log table in PostgreSQL.
-
-**Actual:** Removed entirely. PostgreSQL is not part of the core assessment stack (MongoDB + Airbyte + DuckDB) and introduced unnecessary infrastructure complexity. Console logging and DuckDB's own record counts serve as the audit trail.
-
-### 7. No Automated Scheduler
-
-**Planned:** Automated pipeline execution (e.g., every hour).
-
-**Actual:** All pipeline steps run manually. A production deployment would use Apache Airflow, cron, or Airbyte's built-in scheduling (set to `Every 1 hour` in the connection settings). The Airbyte connection can be set to `Every 1 hour` replication frequency for semi-automation of the sync step.
-
-### 8. Airbyte Raw DuckDB Path is Ephemeral
+### 4. Airbyte Raw DuckDB Path is Ephemeral
 
 **Planned:** Persistent storage for the Airbyte-written DuckDB file.
 
