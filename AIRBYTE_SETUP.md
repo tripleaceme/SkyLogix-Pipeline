@@ -179,4 +179,3 @@ python analyse.py          # analytics on warehouse
 | `NullPointerException` on `getGlobal()` | Airbyte 0.50.35 bug with MongoDB CDC state. Switch sync mode to `Full Refresh \| Overwrite` to avoid state management entirely. |
 | `Incremental \| Append + Deduped` not available | DuckDB destination does not support this mode. Use `Full Refresh \| Overwrite` or `Incremental \| Append` instead. |
 | "File is locked" in transform.py | Wait for the Airbyte sync to complete before running transform.py. |
-| Old DuckDB version error | Delete the old `.duckdb` file — it will be recreated by the next sync. |
